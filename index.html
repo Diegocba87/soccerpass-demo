@@ -2,19 +2,264 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>SoccerPass – Demo Offline</title>
+<style>
+  :root{--green:#1e7f3b;--bg:#0c0d0c;--card:#121412;--muted:#9aa3a4;--text:#f3f6f4;}
+  html,body{margin:0;padding:0;background:#0b0c0b;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,sans-serif}
+  header{position:sticky;top:0;background:linear-gradient(0deg,#0b0c0b,#101210);padding:14px 16px;border-bottom:1px solid #1a1e1a;z-index:2}
+  h1{font-size:18px;margin:0;display:flex;align-items:center;gap:10px}
+  h1 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--green)}
+  .tabs{display:flex;gap:6px;margin-top:10px}
+  .tab{flex:1;text-align:center;padding:10px;border-radius:10px;background:#111313;border:1px solid #1b1f1b;color:#dfe5e1;cursor:pointer}
+  .tab.active{background:var(--green);color:white;border-color:#2ba95b}
+  main{padding:12px}
+  .card{background:#111311;border:1px solid #1a1e1a;border-radius:14px;padding:12px;margin:10px 0}
+  .title{font-weight:700;margin-bottom:6px}
+  label{display:block;color:#d5ddd7;font-size:13px;margin:8px 0 4px}
+  input,select{width:100%;padding:11px;border-radius:10px;border:1px solid #232723;background:#0f110f;color:#f2f6f3}
+  input::placeholder{color:#76817b}
+  .row{display:flex;gap:8px}
+  .row>*{flex:1}
+  button{padding:12px 14px;border:0;border-radius:10px;background:#1b7a38;color:white;font-weight:600;cursor:pointer}
+  button.ghost{background:#0f110f;color:#e7eee9;border:1px solid #223022}
+  .list{display:grid;gap:10px}
+  .item{background:#0e100f;border:1px solid #1a1e1a;border-radius:12px;padding:10px}
+  .muted{color:#94a099;font-size:12px}
+  .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#0f120f;border:1px solid #1e271e;font-size:12px;color:#dfe5df}
+  .ok{color:#9cffc2}
+  .err{color:#ffb0b0}
+  .space{height:8px}
+  .footer{color:#9aa3a4;text-align:center;font-size:12px;padding:18px}
+</style>
 </head>
 <body>
-<h1>SoccerPass – Demo Offline</h1>
-<p>Este é um protótipo simples em HTML para simular o fluxo do aplicativo SoccerPass de forma offline.</p>
-<p>Funcionalidades simuladas:</p>
-<ul>
-<li>Cadastro de times</li>
-<li>Cadastro de campos</li>
-<li>Agendamento de partidas</li>
-<li>Simulação de pagamento e cancelamento</li>
-</ul>
-<p>Abra este arquivo no navegador do seu computador ou celular para testar.</p>
+<header>
+  <h1><span class="dot"></span>SoccerPass — Demo Offline</h1>
+  <div class="tabs">
+    <div class="tab active" data-tab="jogos">Jogos</div>
+    <div class="tab" data-tab="reservar">Reservar</div>
+    <div class="tab" data-tab="admin">Admin</div>
+  </div>
+</header>
+<main>
+  <section id="jogos" class="view">
+    <div class="card">
+      <div class="title">Partidas publicadas</div>
+      <div id="matchesList" class="list"></div>
+      <div id="noMatches" class="muted">Nenhuma partida publicada ainda.</div>
+    </div>
+  </section>
+
+  <section id="reservar" class="view" style="display:none">
+    <div class="card">
+      <div class="title">Reservar partida</div>
+      <div class="row">
+        <div>
+          <label>ID da Partida</label>
+          <input id="bk_match" inputmode="numeric" placeholder="ex.: 1">
+        </div>
+        <div>
+          <label>ID Time Mandante</label>
+          <input id="bk_home" inputmode="numeric" placeholder="ex.: 1">
+        </div>
+      </div>
+      <label>ID Time Visitante (opcional)</label>
+      <input id="bk_away" inputmode="numeric" placeholder="ex.: 2">
+      <div class="space"></div>
+      <button id="btnReserve">Reservar</button>
+    </div>
+
+    <div class="card">
+      <div class="title">Cancelar reserva</div>
+      <label>ID da Reserva</label>
+      <input id="cancel_id" inputmode="numeric" placeholder="ex.: 1">
+      <div class="space"></div>
+      <button class="ghost" id="btnCancel">Cancelar</button>
+      <div class="space"></div>
+      <div id="cancelMsg" class="muted"></div>
+    </div>
+  </section>
+
+  <section id="admin" class="view" style="display:none">
+    <div class="card">
+      <div class="title">Criar Time</div>
+      <label>Nome</label><input id="t_name" placeholder="Time A">
+      <label>Contato</label><input id="t_contact" placeholder="+55 (65) 9....">
+      <div class="space"></div>
+      <button id="btnTeam">Criar Time</button>
+    </div>
+
+    <div class="card">
+      <div class="title">Criar Campo</div>
+      <label>Nome</label><input id="f_name" placeholder="Arena do Parque">
+      <label>Localização</label><input id="f_loc" placeholder="Cuiabá/MT">
+      <label>Contato do Proprietário</label><input id="f_owner" placeholder="+55 (65)...">
+      <div class="space"></div>
+      <button id="btnField">Criar Campo</button>
+    </div>
+
+    <div class="card">
+      <div class="title">Abrir Slot</div>
+      <div class="row">
+        <div><label>ID do Campo</label><input id="s_field" inputmode="numeric" placeholder="ex.: 1"></div>
+        <div><label>Preço do Campo (R$)</label><input id="s_price" inputmode="decimal" placeholder="150.00"></div>
+      </div>
+      <div class="row">
+        <div><label>Início</label><input id="s_start" type="datetime-local"></div>
+        <div><label>Fim</label><input id="s_end" type="datetime-local"></div>
+      </div>
+      <div class="space"></div>
+      <button id="btnSlot">Criar Slot</button>
+    </div>
+
+    <div class="card">
+      <div class="title">Cadastrar Árbitro</div>
+      <label>Nome</label><input id="r_name" placeholder="João da Silva">
+      <label>Contato</label><input id="r_contact" placeholder="+55 (65)...">
+      <div class="space"></div>
+      <button id="btnRef">Criar Árbitro</button>
+    </div>
+
+    <div class="card">
+      <div class="title">Confirmar Disponibilidade</div>
+      <div class="row">
+        <div><label>ID Árbitro</label><input id="av_ref" inputmode="numeric" placeholder="ex.: 1"></div>
+        <div><label>ID Slot</label><input id="av_slot" inputmode="numeric" placeholder="ex.: 1"></div>
+      </div>
+      <div class="space"></div>
+      <button id="btnAv">Confirmar</button>
+    </div>
+
+    <div class="card">
+      <div class="title">Publicar Partida</div>
+      <div class="row">
+        <div><label>ID Slot</label><input id="m_slot" inputmode="numeric" placeholder="ex.: 1"></div>
+        <div><label>ID Árbitro</label><input id="m_ref" inputmode="numeric" placeholder="ex.: 1"></div>
+      </div>
+      <label>Preço da Arbitragem (R$)</label><input id="m_refprice" inputmode="decimal" placeholder="150.00">
+      <div class="space"></div>
+      <button id="btnMatch">Publicar</button>
+    </div>
+  </section>
+
+  <div class="footer">SoccerPass – Demo local (sem internet). Dados ficam só no seu aparelho.</div>
+</main>
+
+<script>
+const SKEY = 'soccerpass_demo_v1';
+const STATE = loadState() || initState();
+
+function initState(){
+  return {seq:{team:1, field:1, slot:1, referee:1, match:1, booking:1},
+          teams:[], fields:[], slots:[], referees:[], availability:[],
+          matches:[], bookings:[],
+          params:{serviceFee:0.12, cancelHours:12, penalty:0.10}};
+}
+function save(){ localStorage.setItem(SKEY, JSON.stringify(STATE)); }
+function loadState(){ try{ return JSON.parse(localStorage.getItem(SKEY)); }catch(e){ return null; } }
+function currency(v){ return 'R$ ' + Number(v).toFixed(2).replace('.',','); }
+function fmt(dt){ const d=new Date(dt); return d.toLocaleString(); }
+
+// Domínio
+function createTeam(name, contact){ const id=STATE.seq.team++; STATE.teams.push({id,name,contact}); save(); return id; }
+function createField(name, location, owner){ const id=STATE.seq.field++; STATE.fields.push({id,name,location,owner}); save(); return id; }
+function createSlot(fieldId, start, end, priceField){
+  if(new Date(end)<=new Date(start)) throw 'Fim deve ser após início';
+  const id=STATE.seq.slot++; STATE.slots.push({id,fieldId,start,end,priceField,isReserved:false}); save(); return id;
+}
+function createRef(name, contact){ const id=STATE.seq.referee++; STATE.referees.push({id,name,contact}); save(); return id; }
+function confirmAvailability(refId, slotId){ STATE.availability.push({refId,slotId,confirmed:true}); save(); }
+function isRefAvailable(refId, slotId){ return STATE.availability.some(a=>a.refId==refId && a.slotId==slotId && a.confirmed); }
+function publishMatch(slotId, refId, priceRef){
+  const slot = STATE.slots.find(s=>s.id==slotId);
+  if(!slot) throw 'Slot inexistente';
+  if(slot.isReserved) throw 'Slot já reservado';
+  if(!isRefAvailable(refId, slotId)) throw 'Árbitro não confirmou este slot';
+  const id=STATE.seq.match++; STATE.matches.push({id,slotId,refId,priceRef,serviceFee:STATE.params.serviceFee,published:true}); save(); return id;
+}
+function computeTotal(slotPrice, refPrice, feePercent){ const base = Number(slotPrice)+Number(refPrice); return +(base + base*Number(feePercent)).toFixed(2); }
+function reserve(matchId, homeId, awayId){
+  const m=STATE.matches.find(m=>m.id==matchId); if(!m) throw 'Partida inexistente';
+  const s=STATE.slots.find(s=>s.id==m.slotId); if(!s) throw 'Slot inexistente';
+  if(s.isReserved) throw 'Slot já reservado';
+  const total=computeTotal(s.priceField, m.priceRef, m.serviceFee);
+  const id=STATE.seq.booking++;
+  STATE.bookings.push({id,matchId,homeId,awayId: awayId||null,total,paid:true,status:"CONFIRMED",penalty:0});
+  s.isReserved = true; save(); return {id,total};
+}
+function cancelBooking(bid){
+  const b=STATE.bookings.find(x=>x.id==bid); if(!b) throw 'Reserva inexistente';
+  const m=STATE.matches.find(m=>m.id==b.matchId);
+  const s=STATE.slots.find(s=>s.id==m.slotId);
+  const now=new Date();
+  const start=new Date(s.start);
+  let penalty=0;
+  const diffHours=(start-now)/36e5;
+  if(diffHours < STATE.params.cancelHours){ penalty = +(Number(b.total) * Number(STATE.params.penalty)).toFixed(2); }
+  b.status="CANCELLED"; b.penalty=penalty; s.isReserved=false; save(); return penalty;
+}
+
+// UI / Navegação
+const tabs=[...document.querySelectorAll('.tab')];
+const views={'jogos':document.getElementById('jogos'),'reservar':document.getElementById('reservar'),'admin':document.getElementById('admin')};
+tabs.forEach(t=>t.onclick=()=>{ tabs.forEach(x=>x.classList.remove('active')); t.classList.add('active'); Object.values(views).forEach(v=>v.style.display='none'); views[t.dataset.tab].style.display='block'; if(t.dataset.tab==='jogos') renderMatches(); });
+
+function renderMatches(){
+  const list=document.getElementById('matchesList');
+  list.innerHTML='';
+  const published = STATE.matches.filter(m=>m.published);
+  document.getElementById('noMatches').style.display = published.length? 'none':'block';
+  for(const m of published){
+    const s = STATE.slots.find(x=>x.id==m.slotId);
+    const li=document.createElement('div');
+    li.className='item';
+    const base = Number(s.priceField)+Number(m.priceRef);
+    const fee = base*Number(m.serviceFee);
+    const total = base+fee;
+    li.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div>
+          <div><b>Jogo #${m.id}</b> <span class="pill">Slot #${s.id}</span></div>
+          <div class="muted">Campo ${s.fieldId} • ${fmt(s.start)} – ${fmt(s.end)}</div>
+          <div class="muted">Árbitro ${m.refId} • Serviço ${(m.serviceFee*100).toFixed(0)}%</div>
+        </div>
+        <div style="text-align:right">
+          <div>Total</div>
+          <div><b>${currency(total)}</b></div>
+        </div>
+      </div>
+      <div class="space"></div>
+      <button class="ghost" onclick="goReserve(${m.id})">Reservar</button>
+    `;
+    list.appendChild(li);
+  }
+}
+function goReserve(matchId){ document.querySelector('[data-tab="reservar"]').click(); document.getElementById('bk_match').value = matchId; }
+
+// Botões
+document.getElementById('btnTeam').onclick=()=>{ const name=document.getElementById('t_name').value.trim(); if(!name) return alert('Informe o nome'); const id=createTeam(name, document.getElementById('t_contact').value.trim()); alert('Time criado: #'+id); };
+document.getElementById('btnField').onclick=()=>{ const id=createField(document.getElementById('f_name').value.trim(),document.getElementById('f_loc').value.trim(),document.getElementById('f_owner').value.trim()); alert('Campo criado: #'+id); };
+document.getElementById('btnSlot').onclick=()=>{ try{ const id=createSlot(Number(document.getElementById('s_field').value),document.getElementById('s_start').value,document.getElementById('s_end').value,Number(document.getElementById('s_price').value)); alert('Slot criado: #'+id);}catch(e){ alert(e); } };
+document.getElementById('btnRef').onclick=()=>{ const id=createRef(document.getElementById('r_name').value.trim(),document.getElementById('r_contact').value.trim()); alert('Árbitro criado: #'+id); };
+document.getElementById('btnAv').onclick=()=>{ try{ confirmAvailability(Number(document.getElementById('av_ref').value),Number(document.getElementById('av_slot').value)); alert('Disponibilidade confirmada'); }catch(e){ alert(e); } };
+document.getElementById('btnMatch').onclick=()=>{ try{ const id=publishMatch(Number(document.getElementById('m_slot').value),Number(document.getElementById('m_ref').value),Number(document.getElementById('m_refprice').value)); alert('Partida publicada: #'+id); renderMatches(); }catch(e){ alert(e); } };
+document.getElementById('btnReserve').onclick=()=>{ try{ const res=reserve(Number(document.getElementById('bk_match').value),Number(document.getElementById('bk_home').value),document.getElementById('bk_away').value? Number(document.getElementById('bk_away').value) : null); alert('Reserva confirmada (ID '+res.id+'). Total '+currency(res.total)); renderMatches(); }catch(e){ alert(e); } };
+document.getElementById('btnCancel').onclick=()=>{ try{ const pen = cancelBooking(Number(document.getElementById('cancel_id').value)); document.getElementById('cancelMsg').innerHTML = pen>0 ? '<span class="err">Multa aplicada: '+currency(pen)+'</span>' : '<span class="ok">Cancelado sem multa.</span>'; renderMatches(); }catch(e){ alert(e); } };
+
+// Seed inicial para ver algo na tela sem cadastro manual
+if(STATE.teams.length===0 && STATE.fields.length===0 && STATE.slots.length===0){
+  const t1=createTeam('Time A','');
+  const f1=createField('Arena do Parque','Cuiabá/MT','');
+  const start = new Date(Date.now()+36e5); // +1h
+  const end = new Date(Date.now()+2*36e5); // +2h
+  const s1=createSlot(1,start.toISOString().slice(0,16),end.toISOString().slice(0,16),180);
+  const r1=createRef('João','');
+  confirmAvailability(1,1);
+  publishMatch(1,1,150);
+  save();
+}
+renderMatches();
+</script>
 </body>
 </html>
